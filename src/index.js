@@ -4,7 +4,7 @@ const app = express();
 
 app.use(express.json());
 
-mongoose.connect("", {useNewUrlParser: true})
+mongoose.connect("mongodb+srv://SAURABH:Soa4GdK4yRvlVN5i@cluster0.umtgp.mongodb.net/group5Database?retryWrites=true&w=majority", {useNewUrlParser: true})
 .then(()=>console.log("Connected to database..."))
 .catch((err)=>console.log(err));
 
