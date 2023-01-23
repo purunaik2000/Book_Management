@@ -39,6 +39,29 @@ const isEmpty = function (value) {
 // const isValidObjectId = (objectId) => {
 //   return mongoose.Types.ObjectId.isValid(objectId);
 // };
+/*-----------------------------------BOOK TITLE VALIDATION -----------------------------------------------------*/
+
+
+const isValidBookTitle = function (name){
+  const nameRegex = /^([a-zA-Z0-9:-]+\s)*[a-zA-Z0-9:-]+$/;
+  return nameRegex.test(name);
+};
+
+/*---------------------------------------------ISBN VALIDATION-------------------------------------------*/
+
+const isVAlidISBN = function (ISBN){
+  const ISBNRegex = /^(?=(?:\D*\d){10}(?:(?:\D*\d){3})?$)[\d-]+$/;
+  return ISBNRegex.test(ISBN);
+  
+};
+
+/*--------------------------------------------- DATE VALIDATION-------------------------------------------*/
+
+const isVAlidDate = function (releasedAt){
+  const DateRegex = /^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))$/;
+  return DateRegex.test(releasedAt);
+  
+};
 
 module.exports = {
   isEmpty,
@@ -47,4 +70,7 @@ module.exports = {
 //   isValidObjectId,
   isValidPhone,
   isValidPassword,
+  isValidBookTitle ,
+  isVAlidISBN,
+  isVAlidDate
 };

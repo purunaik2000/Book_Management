@@ -5,10 +5,11 @@ const route = require('./route/route');
 
 app.use(express.json());
 
-mongoose.connect("mongodb+srv://SAURABH:Soa4GdK4yRvlVN5i@cluster0.umtgp.mongodb.net/group5Database?retryWrites=true&w=majority",
-    { useNewUrlParser: true })
-    .then(() => console.log("Connected to database..."))
-    .catch((err) => console.log(err));
+mongoose.connect("mongodb+srv://SAURABH:Soa4GdK4yRvlVN5i@cluster0.umtgp.mongodb.net/group5Database?retryWrites=true&w=majority", {useNewUrlParser: true})
+.then(()=>console.log("Connected to database..."))
+.catch((err)=>console.log(err));
+
+const route = require('./route/route');
 
 app.use('/', route);
 
