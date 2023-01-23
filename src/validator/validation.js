@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const moment = require('moment');
 
 //Name Validation
 
@@ -28,17 +29,6 @@ const isValidPhone = function (phone) {
   return phoneRegex.test(phone);
 };
 
-//Value Validation
-
-const isEmpty = function (value) {
-  if (typeof value === "undefined" || value === null) return false;
-  if (typeof value === "string" && value.trim().length == 0) return false;
-  return true;
-};
-
-// const isValidObjectId = (objectId) => {
-//   return mongoose.Types.ObjectId.isValid(objectId);
-// };
 /*-----------------------------------BOOK TITLE VALIDATION -----------------------------------------------------*/
 
 
@@ -58,16 +48,13 @@ const isVAlidISBN = function (ISBN){
 /*--------------------------------------------- DATE VALIDATION-------------------------------------------*/
 
 const isVAlidDate = function (releasedAt){
-  const DateRegex = /^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))$/;
-  return DateRegex.test(releasedAt);
-  
+  let abc = moment(releasedAt,"DD-MM-YYYY",true).isValid();
+  return abc;
 };
 
 module.exports = {
-  isEmpty,
   isValidName,
   isValidEmail,
-//   isValidObjectId,
   isValidPhone,
   isValidPassword,
   isValidBookTitle ,

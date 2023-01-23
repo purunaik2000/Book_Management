@@ -26,11 +26,11 @@ const loginUser = async function (req, res) {
           Id:user._id.toString()
         },
         "Book-management-secure-key",
-        {expiresIn:"10s"}
+        {expiresIn:"10m"}
       );
     
       res.setHeader("jwt-key", token);
-      res.status(200).send({status:true,message:"Success",data:{token:token,Id:_id,exp:"10s", iat:Date.now()}});
+      res.status(200).send({status:true,message:"Success",data:{token:token,exp:"10m",userId: user._id, iat:Date.now()}});
     };
 
     module.exports={loginUser}
