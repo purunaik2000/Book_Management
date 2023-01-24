@@ -1,18 +1,19 @@
 const userModel = require("../model/UserModel.js");
 const validation = require("../validator/validation");
+const moment = require('moment');
 const jwt = require("jsonwebtoken");
-let { isValidName, isValidPhone, isValidEmail, isValidPassword} = validation;
+let { isValidTitle, isValidName, isValidPhone, isValidEmail, isValidPassword } = validation;
 
 exports.createUser = async function (req, res) {
   try {
     let data = req.body;
-    let { title, name, phone, email, password } = data;
+    let { title, name, phone, email, password, address } = data;
     if (Object.keys(data).length == 0) {
-        return res
-        .status(400)
-        .send({ status: false, msg: "Please provide key in request body" });
+      return res
+      .status(400)
+      .send({ status: false, msg: "Please provide key in request body" });
     }
-    Object.keys(data).forEach(x=>data[x]=data[x].toString().trim());
+    Object.keys(data).forEach(x => data[x] = data[x].toString().trim());
 
     if (!title) {
       return res
@@ -40,7 +41,7 @@ exports.createUser = async function (req, res) {
         .status(400)
         .send({ status: false, msg: "Please provide password" });
     }
-    if (!isValidName(title)) {
+    if (!isValidTitle(title)) {
       return res
         .status(400)
         .send({ status: false, msg: "title should be alphabets only" });
@@ -55,7 +56,7 @@ exports.createUser = async function (req, res) {
     if (!isValidPhone(phone))
       return res
         .status(400)
-        .send({ status: false, message: "please provide a valid phone no." });
+        .send({ status: false, message: "Please provide a valid indian phone no." });
 
     if (!isValidEmail(email)) {
       return res
@@ -66,20 +67,26 @@ exports.createUser = async function (req, res) {
     if (!isValidPassword(password)) {
       return res
         .status(400)
-        .send({ status: false, msg: "please provide valid password" });
+        .send({ status: false, msg: "Password must contain at least 1 upperCase, 1 lowerCase and 1 special character, minlen = 8, maxlen =15." });
     }
 
-    let check = await userModel.findOne({$or: [{email}, {phone}]});
-    if(check){
-        if (check.email==email) {
-            return res.status(400).send({ status: false, message: "This email is already exist." });
-        }
-        if (check.phone==phone) {
-            return res.status(400).send({ status: false, message: "This phone is already exist." });
-        }
+    if(address && address.pincode && (address.pincode.toString().length!=6 || isNaN(address.pincode)))
+      return res.status(400).send({status: false, message: "Pincode must be of 6 digits."});
+
+    if(address && address.city && !isValidName(address.city))
+      return res.status(400).send({status: false, message: "Please provide valid city name."});
+
+    let check = await userModel.findOne({ $or: [{ email }, { phone }] });
+    if (check) {
+      if (check.email == email) {
+        return res.status(400).send({ status: false, message: "This email is already exist." });
+      }
+      if (check.phone == phone) {
+        return res.status(400).send({ status: false, message: "This phone is already exist." });
+      }
     }
 
-    let create = await userModel.create(data);
+    let create = await userModel.create({...data, address});
 
     res.status(201).send({ status: true, data: create });
   } catch (err) {
@@ -92,17 +99,17 @@ exports.loginUser = async function (req, res) {
   let email = body.email;
   let password = body.password;
   if (Object.keys(body).length === 0)
-    return res.status(400).send("please provide email and password");
-  if (!email) return res.status(400).send("plz provide email");
-  if (!password) return res.status(400).send("plz provide password");
+    return res.status(400).send({ status: false, message: "please provide email and password" });
+  if (!email) return res.status(400).send({ status: false, message: "plz provide email" });
+  if (!password) return res.status(400).send({ status: false, message: "plz provide password" });
 
   if (!isValidEmail(email))
-    return res.status(400).send("Invalid email, please provide valid email");
+    return res.status(400).send({ status: false, message: "Invalid email, please provide valid email" });
 
   if (!isValidPassword(password))
     return res
       .status(400)
-      .send("Invalid password, please enter valid password");
+      .send({ status: false, message: "Password must contain at least 1 upperCase, 1 lowerCase and 1 special character, minlen = 8, maxlen =15." });
 
   let user = await userModel.findOne({ email: email, password: password });
   if (!user)
@@ -113,7 +120,7 @@ exports.loginUser = async function (req, res) {
       id: user._id.toString(),
     },
     "Book-management-secure-key",
-    { expiresIn: "10m" }
+    { expiresIn: "10h" }
   );
 
   res.setHeader("jwt-key", token);
@@ -122,6 +129,6 @@ exports.loginUser = async function (req, res) {
     .send({
       status: true,
       message: "Success",
-      data: { token: token, exp: "10m", userId: user._id, iat: Date.now() },
+      data: { token: token, exp: "10h", userId: user._id, iat: moment() },
     });
 };

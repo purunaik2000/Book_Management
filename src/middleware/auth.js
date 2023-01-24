@@ -31,7 +31,8 @@ exports.authentication = async function (req, res, next) {
         if(!mongoose.isValidObjectId(bookId)) return res.status(400).send({status:false, message: "Invalid bookId."});
         const book = await BookModel.findOne({_id: bookId, isDeleted: false});
         if(!book) return res.status(404).send({status:false, message: "Book not found."});
-        if(userId!=decodedToken.id) return res.status(403).send({status: false, message: "Not authorised."});
+        if(book.userId!=decodedToken.id) return res.status(403).send({status: false, message: "Not authorised."});
+        req.book = book;
         next();
     } catch (error) {
         res.status(500).send({status: false, message: error.message});

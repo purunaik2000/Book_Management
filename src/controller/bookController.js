@@ -1,4 +1,4 @@
-const { get, default: mongoose } = require("mongoose");
+const { get, default: mongoose, isValidObjectId } = require("mongoose");
 const BookModel = require("../model/BookModel");
 const ReviewModel = require("../model/ReviewModel");
 const validation = require("../validator/validation");
@@ -45,6 +45,10 @@ exports.createBook = async (req, res) => {
                 .status(400)
                 .send({ status: false, message: "userId is required." });
         }
+        if(!isValidObjectId(userId))
+            return res
+                    .status(400)
+                    .send({status: false, message: "Invalid userId."});
         if (!ISBN) {
             return res
                 .status(400)
@@ -166,28 +170,73 @@ exports.getBook = async function (req, res) {
     }
 };
 
+//<-------------------------------------# update Books #------------------------------------->//
+
+exports.updateBook = async function (req, res) {
+    try {
+        const bookId = req.params.bookId
+        let data = req.body
+        Object.keys(data).forEach(
+            (x) => (data[x] = data[x].toString().trim())
+        );
+        if (Object.keys(data).length == 0) {
+            return res.status(400).send({ status: false, message: "Body is empty" })
+        }
+        const { title, excerpt, releasedAt, ISBN, ...rest } = data
+        if (Object.keys(rest).length != 0) {
+            //Checking extra attributes are added or not
+            return res.status(400).send({ status: false, message: "Not allowed to add extra attributes" });
+        }
+        if (title) {
+            if (!isValidBookTitle(title)) {
+                return res.status(400).send({ status: false, message: "The Date is in inValid Format." });
+            }
+        }
+        if (releasedAt) {
+            if (!isVAlidDate(releasedAt)) {
+                return res.status(400).send({ status: false, message: "The Date is in inValid Format." });
+            }
+        }
+        if (ISBN) {
+            if (!isVAlidISBN(ISBN)) {
+                return res.status(400).send({ status: false, message: "Please provide Valid ISBN." });
+            }
+        }
+
+        if(title==req.book.title) return res.status(400).send({status:false, message: "title should be unique"});
+        if(releasedAt==req.book.releasedAt) return res.status(400).send({status:false, message: "releasedAt should be unique"});
+        if(ISBN==req.book.ISBN) return res.status(400).send({status:false, message: "ISBN should be unique"});
+
+        const updatedBook = await BookModel.findByIdAndUpdate({ _id: bookId }, { $set: { title: title, excerpt: excerpt, releasedAt: releasedAt, ISBN: ISBN } }, { new: true })
+        res.status(200).send({ status: true, message: "book updated successfully", data: updatedBook });
+    }
+    catch (error) {
+        res.status(500).send({ satus: false, message: error.messages })
+    }
+}
+
 //<-------------------------------------# Delete Book #------------------------------------->//
 
 exports.deletedBook = async (req, res) => {
     try {
-      let bookId = req.params.bookId;
-      let checkBookId = await BookModel.findById(bookId);
-      if (!checkBookId || checkBookId.isDeleted == true) {
-        return res
-          .status(404)
-          .send({ status: false, msg: "Book has been already deleted " });
-      }
-      let deletedBook = await BookModel.findOneAndUpdate(
-        { _id: blogId },
-        { $set: { isDeleted: true } },
-        { new: true }
-      );
-      return res.status(200).send({
-        status: true,
-        msg: "Book has been deleted successfully",
-        data: deletedBook,
-      });
+        let bookId = req.params.bookId;
+        let checkBookId = await BookModel.findById(bookId);
+        if (!checkBookId || checkBookId.isDeleted == true) {
+            return res
+                .status(404)
+                .send({ status: false, msg: "Book has been already deleted " });
+        }
+        let deletedBook = await BookModel.findOneAndUpdate(
+            { _id: blogId },
+            { $set: { isDeleted: true } },
+            { new: true }
+        );
+        return res.status(200).send({
+            status: true,
+            msg: "Book has been deleted successfully",
+            data: deletedBook,
+        });
     } catch (err) {
-      return res.status(500).send({ status: false, msg: err.message });
+        return res.status(500).send({ status: false, msg: err.message });
     }
-  };
+};

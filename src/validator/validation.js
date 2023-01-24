@@ -1,6 +1,15 @@
 const mongoose = require("mongoose");
 const moment = require('moment');
 
+//Title validation
+
+const isValidTitle = function(title){
+  let arr = ["Mr", "Mrs", "Miss"];
+  let valid = false;
+  arr.forEach(x=>{if(x==title) valid=true});
+  return valid;
+}
+
 //Name Validation
 
 const isValidName = function (name) {
@@ -19,7 +28,7 @@ const isValidEmail = function (email) {
 //Password Validation
 
 const isValidPassword = function (password) {
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,15}$/;
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,15}$/;
   return passwordRegex.test(password);
 };
 
@@ -53,6 +62,7 @@ const isVAlidDate = function (releasedAt){
 };
 
 module.exports = {
+  isValidTitle,
   isValidName,
   isValidEmail,
   isValidPhone,
