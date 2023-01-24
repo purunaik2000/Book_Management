@@ -1,8 +1,9 @@
 const userModel = require("../model/UserModel.js");
 const validation = require("../validator/validation");
+const jwt = require("jsonwebtoken");
 let { isValidName, isValidPhone, isValidEmail, isValidPassword} = validation;
 
-const createUser = async function (req, res) {
+exports.createUser = async function (req, res) {
   try {
     let data = req.body;
     let { title, name, phone, email, password } = data;
@@ -86,4 +87,41 @@ const createUser = async function (req, res) {
   }
 };
 
-module.exports.createUser = createUser
+exports.loginUser = async function (req, res) {
+  let body = req.body;
+  let email = body.email;
+  let password = body.password;
+  if (Object.keys(body).length === 0)
+    return res.status(400).send("please provide email and password");
+  if (!email) return res.status(400).send("plz provide email");
+  if (!password) return res.status(400).send("plz provide password");
+
+  if (!isValidEmail(email))
+    return res.status(400).send("Invalid email, please provide valid email");
+
+  if (!isValidPassword(password))
+    return res
+      .status(400)
+      .send("Invalid password, please enter valid password");
+
+  let user = await userModel.findOne({ email: email, password: password });
+  if (!user)
+    return res.status(404).send({ status: false, message: "login failed" });
+
+  let token = jwt.sign(
+    {
+      id: user._id.toString(),
+    },
+    "Book-management-secure-key",
+    { expiresIn: "10m" }
+  );
+
+  res.setHeader("jwt-key", token);
+  res
+    .status(200)
+    .send({
+      status: true,
+      message: "Success",
+      data: { token: token, exp: "10m", userId: user._id, iat: Date.now() },
+    });
+};
