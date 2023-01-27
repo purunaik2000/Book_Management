@@ -1,28 +1,39 @@
-const { get, default: mongoose, isValidObjectId } = require("mongoose");
+const { default: mongoose, isValidObjectId } = require("mongoose");
 const BookModel = require("../model/BookModel");
 const ReviewModel = require("../model/ReviewModel");
 const validation = require("../validator/validation");
-let { isValidBookTitle, isVAlidISBN, isVAlidDate } = validation;
+let { isValid, isVAlidISBN, isVAlidDate } = validation;
 
-//>-------------------------------------- CREAT BOOKS ----------------------------------------<//
+//>-------------------------------------- CREATE BOOK ----------------------------------------<//
 
 exports.createBook = async (req, res) => {
     try {
-        let bodyData = req.body;
-        Object.keys(bodyData).forEach(
-            (x) => (bodyData[x] = bodyData[x].toString().trim())
+        let data = req.body;
+        let fields = Object.keys(data);
+        if (fields.length == 0) return res.status(400).send({ status: false, message: "Please provide data for create a book." });
+        fields.forEach(
+            (x) => (data[x] = data[x].toString().trim())
         );
 
-        let { title, excerpt, userId, ISBN, category, subcategory, releasedAt, isDeleted, reviews, ...rest } = bodyData; //Destructuring
+        let {
+            title,
+            excerpt,
+            userId,
+            ISBN,
+            category,
+            subcategory,
+            releasedAt,
+            isDeleted,
+            reviews,
+            ...rest
+        } = data; //Destructuring
 
         if (Object.keys(rest).length != 0) {
             //Checking extra attributes are added or not
-            return res
-                .status(400)
-                .send({
-                    status: false,
-                    message: "Not allowed to add extra attributes",
-                });
+            return res.status(400).send({
+                status: false,
+                message: "Not allowed to add extra attributes",
+            });
         }
 
         if (!title) {
@@ -30,25 +41,32 @@ exports.createBook = async (req, res) => {
                 .status(400)
                 .send({ status: false, message: "title is required." });
         }
-        if (!isValidBookTitle(title)) {
+        if (!isValid(title)) {
             return res
                 .status(400)
                 .send({ status: false, message: "Please provide Valid Title." });
         }
+        title = title.toLowerCase();
+        data.title = data.title.toLowerCase();
         if (!excerpt) {
             return res
                 .status(400)
                 .send({ status: false, message: "experpt is required." });
+        }
+        if (!isValid(excerpt)) {
+            return res
+                .status(400)
+                .send({ status: false, message: "Please provide Valid excerpt." });
         }
         if (!userId) {
             return res
                 .status(400)
                 .send({ status: false, message: "userId is required." });
         }
-        if(!isValidObjectId(userId))
+        if (!isValidObjectId(userId))
             return res
-                    .status(400)
-                    .send({status: false, message: "Invalid userId."});
+                .status(400)
+                .send({ status: false, message: "Invalid userId." });
         if (!ISBN) {
             return res
                 .status(400)
@@ -64,10 +82,20 @@ exports.createBook = async (req, res) => {
                 .status(400)
                 .send({ status: false, message: "category is required." });
         }
+        if (!isValid(category)) {
+            return res
+                .status(400)
+                .send({ status: false, message: "Please provide Valid category." });
+        }
         if (!subcategory) {
             return res
                 .status(400)
                 .send({ status: false, message: "subcategory is required." });
+        }
+        if (!isValid(subcategory)) {
+            return res
+                .status(400)
+                .send({ status: false, message: "Please provide Valid subcategory." });
         }
         if (!releasedAt) {
             return res
@@ -77,10 +105,10 @@ exports.createBook = async (req, res) => {
         if (!isVAlidDate(releasedAt)) {
             return res
                 .status(400)
-                .send({ status: false, message: "The Date is in inValid Format." });
+                .send({ status: false, message: "Date must be in YYYY-MM-DD format." });
         }
 
-        /*----------------------------------- CHECKING UNIQUE -----------------------------*/
+        /*----------------------------------- Checking Unique -----------------------------*/
 
         const check = await BookModel.findOne({ $or: [{ title }, { ISBN }] });
 
@@ -99,29 +127,24 @@ exports.createBook = async (req, res) => {
 
         /*---------------------------------------------------------------------------------------*/
 
-        bodyData.releasedAt = Date(releasedAt);
-        let createBook = await BookModel.create(bodyData);
+        let createBook = await BookModel.create(data);
 
-        return res
-            .status(201)
-            .send({
-                status: true,
-                message: `This ${title} Book is created sucessfully.`,
-                data: createBook,
-            });
+        return res.status(201).send({
+            status: true,
+            message: `This ${title} Book is created sucessfully.`,
+            data: createBook,
+        });
     } catch (error) {
         return res.status(500).send({ status: false, message: error.message });
     }
 };
-/*----------------------------------------------------------------------------------------------------------*/
 
-
-
-//<-------------------------------------# Get Books #------------------------------------->//
+//<-------------------------------------# GET BOOKS #------------------------------------->//
 
 exports.getBooks = async function (req, res) {
     try {
         const queries = req.query;
+        queries.title = queries.title.trim().toLowerCase();
         const books = await BookModel.find({ ...queries, isDeleted: false }).select(
             {
                 title: 1,
@@ -133,10 +156,10 @@ exports.getBooks = async function (req, res) {
                 reviews: 1,
             }
         );
-        if (!books)
+        if (!books.length)
             return res
                 .status(404)
-                .send({ status: false, message: "No any book found." });
+                .send({ status: false, message: "Book not found." });
 
         books.sort((a, b) => a.title.localeCompare(b.title));
         res.status(200).send({ status: true, data: books });
@@ -145,8 +168,7 @@ exports.getBooks = async function (req, res) {
     }
 };
 
-
-//<-------------------------------------# Get Book #------------------------------------->//
+//<-------------------------------------# GET BOOK #------------------------------------->//
 
 exports.getBook = async function (req, res) {
     try {
@@ -162,79 +184,107 @@ exports.getBook = async function (req, res) {
                 .send({ status: false, message: "Book not found." });
         const reviews = await ReviewModel.find({ bookId: id });
         book._doc.reviewsData = reviews;
-        res
-            .status(200)
-            .send({ status: true, data: book });
+        res.status(200).send({ status: true, data: book });
     } catch (error) {
         res.status(500).send({ status: false, message: error.message });
     }
 };
 
-//<-------------------------------------# update Books #------------------------------------->//
+//<-------------------------------------# UPDATE BOOK #------------------------------------->//
 
 exports.updateBook = async function (req, res) {
     try {
-        const bookId = req.params.bookId
-        let data = req.body
-        Object.keys(data).forEach(
-            (x) => (data[x] = data[x].toString().trim())
-        );
+        const bookId = req.params.bookId;
+        let data = req.body;
+        Object.keys(data).forEach((x) => (data[x] = data[x].toString().trim()));
         if (Object.keys(data).length == 0) {
-            return res.status(400).send({ status: false, message: "Body is empty" })
+            return res.status(400).send({ status: false, message: "Body is empty" });
         }
-        const { title, excerpt, releasedAt, ISBN, ...rest } = data
+        const { title, excerpt, releasedAt, ISBN, ...rest } = data;
         if (Object.keys(rest).length != 0) {
             //Checking extra attributes are added or not
-            return res.status(400).send({ status: false, message: "Not allowed to add extra attributes" });
+            return res
+                .status(400)
+                .send({
+                    status: false,
+                    message: "Not allowed to add extra attributes",
+                });
         }
         if (title) {
-            if (!isValidBookTitle(title)) {
-                return res.status(400).send({ status: false, message: "The Date is in inValid Format." });
+            if (!isValid(title)) {
+                return res
+                    .status(400)
+                    .send({ status: false, message: "The title is in inValid Format." });
+            }
+            title = title.toLowerCase();
+            data.title = title.toLowerCase();
+        }
+        if (excerpt) {
+            if (!isValid(excerpt)) {
+                return res
+                    .status(400)
+                    .send({ status: false, message: "The excerpt is in inValid Format." });
             }
         }
         if (releasedAt) {
             if (!isVAlidDate(releasedAt)) {
-                return res.status(400).send({ status: false, message: "The Date is in inValid Format." });
+                return res
+                    .status(400)
+                    .send({ status: false, message: "Date must be in YYYY-MM-DD format." });
             }
         }
         if (ISBN) {
             if (!isVAlidISBN(ISBN)) {
-                return res.status(400).send({ status: false, message: "Please provide Valid ISBN." });
+                return res
+                    .status(400)
+                    .send({ status: false, message: "Please provide Valid ISBN." });
             }
         }
 
-        if(title==req.book.title) return res.status(400).send({status:false, message: "title should be unique"});
-        if(releasedAt==req.book.releasedAt) return res.status(400).send({status:false, message: "releasedAt should be unique"});
-        if(ISBN==req.book.ISBN) return res.status(400).send({status:false, message: "ISBN should be unique"});
+        if (title == req.book.title)
+            return res
+                .status(400)
+                .send({ status: false, message: "title should be unique" });
+        if (releasedAt == req.book.releasedAt)
+            return res
+                .status(400)
+                .send({ status: false, message: "releasedAt should be unique" });
+        if (ISBN == req.book.ISBN)
+            return res
+                .status(400)
+                .send({ status: false, message: "ISBN should be unique" });
 
-        const updatedBook = await BookModel.findByIdAndUpdate({ _id: bookId }, { $set: { title: title, excerpt: excerpt, releasedAt: releasedAt, ISBN: ISBN } }, { new: true })
-        res.status(200).send({ status: true, message: "book updated successfully", data: updatedBook });
+        const updatedBook = await BookModel.findByIdAndUpdate(
+            { _id: bookId },
+            data,
+            { new: true }
+        );
+        res
+            .status(200)
+            .send({
+                status: true,
+                message: "book updated successfully",
+                data: updatedBook,
+            });
+    } catch (error) {
+        res.status(500).send({ status: false, message: error.message });
     }
-    catch (error) {
-        res.status(500).send({ satus: false, message: error.messages })
-    }
-}
+};
 
-//<-------------------------------------# Delete Book #------------------------------------->//
+//<-------------------------------------# DELETE BOOK #------------------------------------->//
 
 exports.deletedBook = async (req, res) => {
     try {
         let bookId = req.params.bookId;
-        let checkBookId = await BookModel.findById(bookId);
-        if (!checkBookId || checkBookId.isDeleted == true) {
-            return res
-                .status(404)
-                .send({ status: false, msg: "Book has been already deleted " });
-        }
-        let deletedBook = await BookModel.findOneAndUpdate(
-            { _id: blogId },
-            { $set: { isDeleted: true } },
+        await BookModel.findByIdAndUpdate(
+            bookId,
+            { isDeleted: true },
             { new: true }
-        );
+        )
+
         return res.status(200).send({
             status: true,
-            msg: "Book has been deleted successfully",
-            data: deletedBook,
+            msg: "Book has been deleted successfully."
         });
     } catch (err) {
         return res.status(500).send({ status: false, msg: err.message });

@@ -1,14 +1,16 @@
 const mongoose = require("mongoose");
-const moment = require('moment');
+const moment = require("moment");
 
 //Title validation
 
-const isValidTitle = function(title){
+const isValidTitle = function (title) {
   let arr = ["Mr", "Mrs", "Miss"];
   let valid = false;
-  arr.forEach(x=>{if(x==title) valid=true});
+  arr.forEach((x) => {
+    if (x == title) valid = true;
+  });
   return valid;
-}
+};
 
 //Name Validation
 
@@ -21,14 +23,15 @@ const isValidName = function (name) {
 
 const isValidEmail = function (email) {
   const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,6})+$/;
-    // /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  // /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return emailRegex.test(email);
 };
 
 //Password Validation
 
 const isValidPassword = function (password) {
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,15}$/;
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,15}$/;
   return passwordRegex.test(password);
 };
 
@@ -40,24 +43,22 @@ const isValidPhone = function (phone) {
 
 /*-----------------------------------BOOK TITLE VALIDATION -----------------------------------------------------*/
 
-
-const isValidBookTitle = function (name){
-  const nameRegex = /^([a-zA-Z0-9:-]+\s)*[a-zA-Z0-9:-]+$/;
+const isValid = function (name) {
+  const nameRegex = /^[A-Za-z]+\s*[A-Za-z0-9 -:]{1,}/;
   return nameRegex.test(name);
 };
 
 /*---------------------------------------------ISBN VALIDATION-------------------------------------------*/
 
-const isVAlidISBN = function (ISBN){
+const isVAlidISBN = function (ISBN) {
   const ISBNRegex = /^(?=(?:\D*\d){10}(?:(?:\D*\d){3})?$)[\d-]+$/;
   return ISBNRegex.test(ISBN);
-  
 };
 
 /*--------------------------------------------- DATE VALIDATION-------------------------------------------*/
 
-const isVAlidDate = function (releasedAt){
-  let abc = moment(releasedAt,"DD-MM-YYYY",true).isValid();
+const isVAlidDate = function (releasedAt) {
+  let abc = moment(releasedAt, "YYYY-MM-DD", true).isValid();
   return abc;
 };
 
@@ -67,7 +68,7 @@ module.exports = {
   isValidEmail,
   isValidPhone,
   isValidPassword,
-  isValidBookTitle ,
+  isValid,
   isVAlidISBN,
-  isVAlidDate
+  isVAlidDate,
 };

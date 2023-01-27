@@ -1,8 +1,11 @@
 const userModel = require("../model/UserModel.js");
 const validation = require("../validator/validation");
-const moment = require('moment');
+const moment = require("moment");
 const jwt = require("jsonwebtoken");
-let { isValidTitle, isValidName, isValidPhone, isValidEmail, isValidPassword } = validation;
+let { isValidTitle, isValidName, isValidPhone, isValidEmail, isValidPassword } =
+  validation;
+
+//<-------------------------------------# CREATE USER #------------------------------------->//
 
 exports.createUser = async function (req, res) {
   try {
@@ -10,10 +13,10 @@ exports.createUser = async function (req, res) {
     let { title, name, phone, email, password, address } = data;
     if (Object.keys(data).length == 0) {
       return res
-      .status(400)
-      .send({ status: false, msg: "Please provide key in request body" });
+        .status(400)
+        .send({ status: false, msg: "Please provide key in request body" });
     }
-    Object.keys(data).forEach(x => data[x] = data[x].toString().trim());
+    Object.keys(data).forEach((x) => (data[x] = data[x].toString().trim()));
 
     if (!title) {
       return res
@@ -54,9 +57,10 @@ exports.createUser = async function (req, res) {
     }
 
     if (!isValidPhone(phone))
-      return res
-        .status(400)
-        .send({ status: false, message: "Please provide a valid indian phone no." });
+      return res.status(400).send({
+        status: false,
+        message: "Please provide a valid indian phone no.",
+      });
 
     if (!isValidEmail(email)) {
       return res
@@ -65,28 +69,48 @@ exports.createUser = async function (req, res) {
     }
 
     if (!isValidPassword(password)) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "Password must contain at least 1 upperCase, 1 lowerCase and 1 special character, minlen = 8, maxlen =15." });
+      return res.status(400).send({
+        status: false,
+        msg: "Password must contain at least 1 upperCase, 1 lowerCase and 1 special character, minlen = 8, maxlen =15.",
+      });
     }
 
-    if(address && address.pincode && (address.pincode.toString().length!=6 || isNaN(address.pincode)))
-      return res.status(400).send({status: false, message: "Pincode must be of 6 digits."});
+    let add = {};
+    if (address) {
+      if (
+        address.pincode &&
+        (address.pincode.toString().trim().length != 6 || isNaN(address.pincode))
+      )
+        return res
+          .status(400)
+          .send({ status: false, message: "Pincode must be of 6 digits." });
 
-    if(address && address.city && !isValidName(address.city))
-      return res.status(400).send({status: false, message: "Please provide valid city name."});
+      if (address.city && !isValidName(address.city))
+        return res
+          .status(400)
+          .send({ status: false, message: "Please provide valid city name." });
+
+
+      if(address.pincode && address.pincode.trim()) add.pincode = address.pincode.trim();
+      if(address.city && address.city.trim()) add.city = address.city.trim();
+      if(address.street && address.street.trim()) add.street = address.street.trim();
+    }
 
     let check = await userModel.findOne({ $or: [{ email }, { phone }] });
     if (check) {
       if (check.email == email) {
-        return res.status(400).send({ status: false, message: "This email is already exist." });
+        return res
+          .status(400)
+          .send({ status: false, message: "This email is already exist." });
       }
       if (check.phone == phone) {
-        return res.status(400).send({ status: false, message: "This phone is already exist." });
+        return res
+          .status(400)
+          .send({ status: false, message: "This phone is already exist." });
       }
     }
 
-    let create = await userModel.create({...data, address});
+    let create = await userModel.create({ ...data, address: add });
 
     res.status(201).send({ status: true, data: create });
   } catch (err) {
@@ -94,22 +118,37 @@ exports.createUser = async function (req, res) {
   }
 };
 
+//<-------------------------------------# LOGIN USER #------------------------------------->//
+
 exports.loginUser = async function (req, res) {
   let body = req.body;
   let email = body.email;
   let password = body.password;
   if (Object.keys(body).length === 0)
-    return res.status(400).send({ status: false, message: "please provide email and password" });
-  if (!email) return res.status(400).send({ status: false, message: "plz provide email" });
-  if (!password) return res.status(400).send({ status: false, message: "plz provide password" });
-
-  if (!isValidEmail(email))
-    return res.status(400).send({ status: false, message: "Invalid email, please provide valid email" });
-
-  if (!isValidPassword(password))
     return res
       .status(400)
-      .send({ status: false, message: "Password must contain at least 1 upperCase, 1 lowerCase and 1 special character, minlen = 8, maxlen =15." });
+      .send({ status: false, message: "please provide email and password" });
+  if (!email)
+    return res
+      .status(400)
+      .send({ status: false, message: "plz provide email" });
+  if (!password)
+    return res
+      .status(400)
+      .send({ status: false, message: "plz provide password" });
+
+  if (!isValidEmail(email))
+    return res.status(400).send({
+      status: false,
+      message: "Invalid email, please provide valid email",
+    });
+
+  if (!isValidPassword(password))
+    return res.status(400).send({
+      status: false,
+      message:
+        "Password must contain at least 1 upperCase, 1 lowerCase and 1 special character, minlen = 8, maxlen =15.",
+    });
 
   let user = await userModel.findOne({ email: email, password: password });
   if (!user)
@@ -123,12 +162,10 @@ exports.loginUser = async function (req, res) {
     { expiresIn: "10h" }
   );
 
-  res.setHeader("jwt-key", token);
-  res
-    .status(200)
-    .send({
-      status: true,
-      message: "Success",
-      data: { token: token, exp: "10h", userId: user._id, iat: moment() },
-    });
+  res.setHeader("x-api-key", token);
+  res.status(200).send({
+    status: true,
+    message: "Success",
+    data: { token: token, exp: "10h", userId: user._id, iat: moment() },
+  });
 };
