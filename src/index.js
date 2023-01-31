@@ -1,9 +1,11 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const multer = require('multer');
 const app = express();
 const route = require("./route/route");
 
 app.use(express.json());
+app.use(multer().any());
 
 mongoose.set("strictQuery", true);
 mongoose
